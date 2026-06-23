@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Tile: PC Hardware </title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <link rel="icon" type="image/png" href="icon.svg"/>
+    <style>
+        /* นำเข้าฟอนต์ IBM Plex Mono และ Chakra Petch */
+        @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500;700&display=swap');
+        
+        body {
+            font-family: 'Chakra Petch', sans-serif;
+            background-color: #000;
+            overflow: hidden;
+        }
+        .mono-font {
+            font-family: 'IBM Plex Mono', monospace;
+        }
+        .glass-panel {
+            background: rgba(5, 5, 15, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+        }
+        #webcam {
+            transform: scaleX(-1);
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body class="w-screen h-screen flex flex-col items-center justify-center text-white relative select-none">
+
+    <video id="webcam" class="absolute inset-0 w-full h-full -z-20" autoplay playsinline></video>
+    <div class="absolute inset-0 bg-slate-950/55 -z-10 pointer-events-none"></div>
+
+    <canvas id="gameCanvas" class="absolute inset-0 w-full h-full z-0"></canvas>
+
+    <div id="startScreen" class="absolute inset-0 flex flex-col items-center justify-center z-10 glass-panel m-4 rounded-2xl max-w-2xl mx-auto my-auto h-[70vh]">
+        <h1 class="mono-font text-5xl font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-fuchsia-500 mb-2 text-center drop-shadow-[0_0_10px_rgba(6,182,212,0.5)]">
+            AR CYBERDROP
+        </h1>
+        <p class="text-cyan-400 font-semibold tracking-widest text-sm mb-6 uppercase">ภารกิจพิชิตคำศัพท์คอมพิวเตอร์ทีละด้าน (4 Stages)</p>
+        
+        <div class="max-w-md text-left space-y-2.5 mb-8 text-gray-300 px-6 text-sm">
+            <p class="text-emerald-400 font-bold text-center text-base mb-1">🗺️ กฎการผ่านด้าน (Stage Rules):</p>
+            <p>• ต้องตอบคำศัพท์ในด้านนั้นๆ ให้ครบทุกคำ ระบบจึงจะปลดล็อกด่านถัดไป</p>
+            <p>• ด่าน 1: ชิ้นส่วนหลัก (8 คำ) ➔ ด่าน 2: อุปกรณ์นำเข้า (5 คำ)</p>
+            <p>• ด่าน 3: อุปกรณ์แสดงผล (4 คำ) ➔ ด่าน 4: อุปกรณ์ต่อพ่วง (5 คำ)</p>
+            <p class="text-fuchsia-400 text-center font-semibold pt-1">เคลียร์ให้ครบทั้ง 4 ด้านเพื่อชนะเกมและรับใบประกาศไซเบอร์!</p>
+        </div>
+
+        <div id="loadingContainer" class="flex flex-col items-center gap-4">
+            <div class="flex items-center gap-3 bg-black/60 px-6 py-2.5 rounded-full border border-cyan-500/30">
+                <span id="loadingText" class="text-cyan-300 font-medium tracking-wide text-sm animate-pulse">กำลังจัดเตรียมโครงสร้างด่านและระบบ AI...</span>
+            </div>
+            <button id="startBtn" disabled class="mono-font bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-bold text-xl px-12 py-3.5 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-[0_0_15px_rgba(6,182,212,0.4)] hidden">
+                START_STAGE_1
+            </button>
+        </div>
+    </div>
+
+    <div id="hud" class="absolute inset-x-0 top-0 p-6 flex justify-between items-start pointer-events-none opacity-0 transition-opacity duration-500 z-10">
+        <div class="flex flex-col gap-2 items-start">
+            <div class="glass-panel px-5 py-2 rounded-xl border-cyan-500/30">
+                <p class="text-xs tracking-wider text-cyan-400 font-bold uppercase">Score</p>
+                <p id="scoreVal" class="mono-font text-2xl font-bold">0000</p>
+            </div>
+            <button id="quitBtn" class="pointer-events-auto w-full px-3 py-1.5 bg-rose-950/80 hover:bg-rose-800 border border-rose-500/50 rounded-lg text-xs font-bold text-rose-300 transition-colors duration-200 shadow-md">
+                🏳️ ออกจากเกม (Quit)
+            </button>
+        </div>
+
+        <div class="glass-panel px-6 py-2 rounded-xl border-fuchsia-500/30 text-center min-w-[240px]">
+            <p id="stageTitle" class="mono-font text-xs font-bold text-fuchsia-400 mb-0.5">STAGE 1/4</p>
+            <p id="categoryName" class="text-sm font-bold text-white tracking-wide">กำลังโหลด...</p>
+            <p id="stageProgress" class="text-[11px] text-emerald-400 font-medium mt-0.5">เหลืออีก 0 คำจะผ่านด้าน</p>
+        </div>
+
+        <div class="glass-panel px-5 py-2 rounded-xl border-rose-500/30 flex flex-col items-end">
+            <p class="text-xs tracking-wider text-rose-400 font-bold mb-0.5 uppercase">Lives</p>
+            <div id="livesContainer" class="flex gap-1 text-base text-rose-500">💖 💖 💖</div>
+        </div>
+    </div>
+
+    <div id="timeBarContainer" class="absolute bottom-4 inset-x-12 h-1.5 bg-black/40 rounded-full border border-slate-800 opacity-0 transition-opacity duration-500 overflow-hidden">
+        <div id="timeBar" class="h-full w-full bg-cyan-400"></div>
+    </div>
+
+    <div id="gameOverScreen" class="absolute inset-0 flex flex-col items-center justify-center z-20 glass-panel m-4 rounded-2xl border-rose-500/30 max-w-md mx-auto my-auto h-[55vh] hidden">
+        <h2 id="endTitle" class="mono-font text-4xl font-bold text-rose-500 tracking-wide mb-2">GAME OVER</h2>
+        <p id="endSub" class="text-gray-400 text-sm mb-6 uppercase tracking-widest text-center px-4">พลังชีวิตของคุณหมดลง</p>
+        <p class="text-gray-300 mb-8 text-xl">คะแนนเทคโนโลยี: <span id="finalScore" class="mono-font font-bold text-cyan-400 text-2xl">0</span></p>
+        
+        <div class="flex flex-col gap-3 w-full px-8">
+            <button id="restartBtn" class="mono-font w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-bold text-lg py-3 rounded-xl transition-all duration-300 transform hover:scale-[1.02] shadow-md">
+                TRY_AGAIN
+            </button>
+            <button id="menuBtn" class="mono-font w-full bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 font-semibold text-base py-2.5 rounded-xl transition-colors duration-200">
+                BACK_TO_MAIN_MENU
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const STAGES_DATA = [
+            {
+                name: "ชิ้นส่วนหลักภายในเครื่อง",
+                words: [
+                    { word: "CPU", hint: "หน่วยประมวลผลกลางเปรียบเหมือนสมองคอมพิวเตอร์", icon: "cpu" },
+                    { word: "MAINBOARD", hint: "แผงวงจรหลักที่รวมทุกชิ้นส่วนเข้าด้วยกัน", icon: "mainboard" },
+                    { word: "RAM", hint: "หน่วยความจำหลักชั่วคราว ช่วยให้เปิดแอปพร้อมกันได้ลื่นไหล", icon: "ram" },
+                    { word: "SSD", hint: "หน่วยความจำสำรองความเร็วสูงมาก ใช้ลงวินโดวส์และเกม", icon: "ssd" },
+                    { word: "HDD", hint: "ฮาร์ดดิสก์จานแม่เหล็กบันทยากข้อมูลถาวรยุคดั้งเดิม", icon: "hdd" },
+                    { word: "GPU", hint: "การ์ดจอ หน่วยประมวลผลกราฟิกและการเล่นเกมสามมิติ", icon: "gpu" },
+                    { word: "PSU", hint: "แหล่งจ่ายไฟ แปลงไฟบ้านเพื่อแจกจ่ายกระแสไฟในเครื่อง", icon: "psu" },
+                    { word: "FAN", hint: "พัดลมระบายความร้อนเพื่อควบคุมอุณหภูมิไม่ให้เครื่องค้าง", icon: "fan" }
+                ]
+            },
+            {
+                name: "อุปกรณ์นำเข้าข้อมูล (Input)",
+                words: [
+                    { word: "KEYBOARD", hint: "แป้นพิมพ์สำหรับพิมพ์ตัวอักษรและป้อนคำสั่งเข้าเครื่อง", icon: "keyboard" },
+                    { word: "MOUSE", hint: "เมาส์สำหรับเลื่อนตัวชี้ตำแหน่งและคลิกสั่งการบนหน้าจอ", icon: "mouse" },
+                    { word: "SWITCH", hint: "สวิตช์กลไกใต้ปุ่มแป้นพิมพ์ Mechanical เช่น Blue, Red", icon: "switch" },
+                    { word: "MIC", hint: "ไมโครโฟนสำหรับรับและบันทึกคลื่นเสียงพูดเข้าคอมพิวเตอร์", icon: "mic" },
+                    { word: "WEBCAM", hint: "กล้องเว็บแคมสำหรับบันทึกภาพวิดีโอสดลงเครื่องคอม", icon: "webcam" }
+                ]
+            },
+            {
+                name: "อุปกรณ์แสดงผล (Output)",
+                words: [
+                    { word: "MONITOR", hint: "หน้าจอคอมพิวเตอร์แสดงผลภาพกราฟิกให้เรามองเห็น", icon: "monitor" },
+                    { word: "SPEAKER", hint: "ลำโพงปล่อยและขับสัญญาณคลื่นเสียงออกมาให้เราได้ยิน", icon: "speaker" },
+                    { word: "HEADPHONES", hint: "หูฟังครอบหัวเพื่อการรับฟังเสียงเอฟเฟกต์แบบส่วนตัว", icon: "headphones" },
+                    { word: "PRINTER", hint: "เครื่องพิมพ์สำหรับพิมพ์ภาพหรือเอกสารดิจิทัลลงบนกระดาษ", icon: "printer" }
+                ]
+            },
+            {
+                name: "อุปกรณ์ต่อพ่วงและพอร์ตเชื่อมต่อ",
+                words: [
+                    { word: "CASE", hint: "กล่องโครงเคสเหล็กสำหรับหุ้มชิ้นส่วนภายในทั้งหมดไว้", icon: "case" },
+                    { word: "USB", hint: "พอร์ตเชื่อมต่อมาตรฐานสากลยอดนิยม ใช้ส่งข้อมูลและชาร์จไฟ", icon: "usb" },
+                    { word: "HDMI", hint: "ช่องเสียบสายส่งสัญญาณภาพและเสียงดิจิทัลความละเอียดสูง", icon: "hdmi" },
+                    { word: "LAN", hint: "ช่องเสียบสายอินเทอร์เน็ตความเร็วสูงเพื่อความเสถียรสูงสุด", icon: "lan" },
+                    { word: "EXTERNAL", hint: "ฮาร์ดดิสก์พกพาภายนอก ย้ายไปเสียบใช้งานเครื่องอื่นได้ง่าย", icon: "external" }
+                ]
+            }
+        ];
+
+        let state = {
+            score: 0, lives: 3, scene: "START",
+            currentStageIdx: 0,
+            currentWordIdx: 0,
+            stageWordsQueue: [],
+            hand: { x: 0, y: 0, isPinching: false, grabbedTile: null },
+            tiles: [], slots: [],
+            currentRoundData: null, roundStartTime: 0, roundLimit: 60000,
+            aiLoaded: false
+        };
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playTone(freq, type, duration, vol=0.1) {
+            try {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+                osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(); osc.stop(audioCtx.currentTime + duration);
+            } catch(e){}
+        }
+
+        const SOUNDS = {
+            grab: () => playTone(650, 'sine', 0.04, 0.07),
+            drop: () => playTone(380, 'triangle', 0.06, 0.07),
+            correctWord: () => {
+                playTone(523, 'sine', 0.07, 0.1);
+                setTimeout(() => playTone(659, 'sine', 0.07, 0.1), 70);
+                setTimeout(() => playTone(783, 'sine', 0.12, 0.1), 140);
+            },
+            stageClear: () => {
+                playTone(587, 'sine', 0.1, 0.1);
+                setTimeout(() => playTone(698, 'sine', 0.1, 0.1), 90);
+                setTimeout(() => playTone(880, 'sine', 0.1, 0.1), 180);
+                setTimeout(() => playTone(1046, 'sine', 0.3, 0.15), 270);
+            },
+            wrong: () => { playTone(140, 'sawtooth', 0.2, 0.15); }
+        };
+
+        const gameCanvas = document.getElementById('gameCanvas'); const ctx = gameCanvas.getContext('2d');
+        function resize() { gameCanvas.width = window.innerWidth; gameCanvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize); resize();
+
+        function drawVisualIcon(type, cx, cy) {
+            ctx.save(); ctx.strokeStyle = "#c084fc"; ctx.lineWidth = 3.5;
+            ctx.shadowBlur = 15; ctx.shadowColor = "#c084fc"; ctx.fillStyle = "rgba(192, 132, 252, 0.05)";
+
+            if (type === "cpu") {
+                ctx.beginPath(); ctx.rect(cx-30, cy-30, 60, 60); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.rect(cx-15, cy-15, 30, 30); ctx.stroke();
+                for(let i = -20; i <= 20; i += 13) {
+                    ctx.beginPath(); ctx.moveTo(i+cx, cy-30); ctx.lineTo(i+cx, cy-38); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(i+cx, cy+30); ctx.lineTo(i+cx, cy+38); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(cx-30, i+cy); ctx.lineTo(cx-38, i+cy); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(cx+30, i+cy); ctx.lineTo(cx+38, i+cy); ctx.stroke();
+                }
+            } else if (type === "mainboard") {
+                ctx.beginPath(); ctx.rect(cx-45, cy-40, 90, 80); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.rect(cx-35, cy-30, 25, 25); ctx.stroke();
+                ctx.beginPath(); ctx.rect(cx+10, cy-30, 8, 45); ctx.stroke();
+                ctx.beginPath(); ctx.rect(cx-35, cy+15, 45, 12); ctx.stroke();
+            } else if (type === "ram") {
+                ctx.beginPath(); ctx.rect(cx-55, cy-15, 110, 30); ctx.fill(); ctx.stroke();
+                for(let i = -40; i <= 40; i += 20) ctx.beginPath(), ctx.rect(cx+i-6, cy-8, 12, 12), ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(cx-50, cy+15); ctx.lineTo(cx+50, cy+15); ctx.lineWidth = 5; ctx.stroke();
+            } else if (type === "ssd") {
+                ctx.beginPath(); ctx.rect(cx-35, cy-45, 70, 90); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.rect(cx-20, cy-30, 40, 35); ctx.stroke();
+                ctx.font = "bold 13px 'Chakra Petch'"; ctx.fillStyle = "#c084fc"; ctx.textAlign="center"; ctx.fillText("NVMe M.2", cx, cy+25);
+            } else if (type === "hdd") {
+                ctx.beginPath(); ctx.rect(cx-35, cy-45, 70, 90); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.arc(cx, cy-10, 28, 0, Math.PI*2); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(cx+5, cy+20); ctx.lineTo(cx, cy-5); ctx.stroke();
+            } else if (type === "gpu") {
+                ctx.beginPath(); ctx.rect(cx-60, cy-25, 120, 50); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.arc(cx-25, cy, 17, 0, Math.PI*2); ctx.stroke();
+                ctx.beginPath(); ctx.arc(cx+25, cy, 17, 0, Math.PI*2); ctx.stroke();
+            } else if (type === "psu") {
+                ctx.beginPath(); ctx.rect(cx-40, cy-40, 80, 80); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.arc(cx-10, cy-10, 22, 0, Math.PI*2); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(cx+25, cy+20); ctx.lineTo(cx+45, cy+30); ctx.stroke();
+            } else if (type === "fan") {
+                ctx.beginPath(); ctx.rect(cx-40, cy-40, 80, 80); ctx.stroke();
+                ctx.beginPath(); ctx.arc(cx, cy, 32, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+                for(let a=0; a<Math.PI*2; a+=Math.PI/2) {
+                    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx+Math.cos(a)*28, cy+Math.sin(a)*28); ctx.stroke();
+                }
+            } else if (type === "keyboard") {
+                ctx.beginPath(); ctx.rect(cx-55, cy-20, 110, 40); ctx.fill(); ctx.stroke();
+                for(let i=-40; i<=40; i+18) { ctx.beginPath(); ctx.rect(cx+i-5, cy-10, 10, 7); ctx.stroke(); i+=18; }
+            } else if (type === "mouse") {
+                ctx.beginPath(); ctx.roundRect(cx-20, cy-32, 40, 64, 18); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(cx, cy-32); ctx.lineTo(cx, cy); ctx.stroke();
+                ctx.beginPath(); ctx.rect(cx-3, cy-20, 6, 10); ctx.stroke();
+            } else if (type === "switch") {
+                ctx.beginPath(); ctx.rect(cx-25, cy-25, 50, 50); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.rect(cx-10, cy-10, 20, 20); ctx.lineWidth = 4; ctx.stroke();
+            } else if (type === "mic") {
+                ctx.beginPath(); ctx.roundRect(cx-12, cy-30, 24, 40, 10); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(cx, cy+10); ctx.lineTo(cx, cy+30); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(cx-16, cy+30); ctx.lineTo(cx+16, cy+30); ctx.stroke();
+            } else if (type === "webcam") {
+                ctx.beginPath(); ctx.arc(cx, cy-8, 22, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.arc(cx, cy-8, 8, 0, Math.PI*2); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(cx-12, cy+14); ctx.lineTo(cx-22, cy+32); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(cx+12, cy+14); ctx.lineTo(cx+22, cy+32); ctx.stroke();
+            } else if (type === "monitor") {
+                ctx.beginPath(); ctx.rect(cx-60, cy-38, 120, 64); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(cx-15, cy+26); ctx.lineTo(cx-22, cy+42); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(cx+15, cy+26); ctx.lineTo(cx+22, cy+42); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(cx-30, cy+42); ctx.lineTo(cx+30, cy+42); ctx.stroke();
+            } else if (type === "speaker") {
+                ctx.beginPath(); ctx.roundRect(cx-22, cy-42, 44, 84, 8); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.arc(cx, cy-16, 12, 0, Math.PI*2); ctx.stroke();
+                ctx.beginPath(); ctx.arc(cx, cy+18, 16, 0, Math.PI*2); ctx.stroke();
+            } else if (type === "headphones") {
+                ctx.beginPath(); ctx.arc(cx, cy+5, 32, Math.PI, 0); ctx.stroke();
+                ctx.beginPath(); ctx.roundRect(cx-42, cy-5, 14, 32, 6); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.roundRect(cx+28, cy-5, 14, 32, 6); ctx.fill(); ctx.stroke();
+            } else if (type === "printer") {
+                ctx.beginPath(); ctx.rect(cx-45, cy-20, 90, 42); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(cx-30, cy-20); ctx.lineTo(cx-30, cy-35); ctx.lineTo(cx+30, cy-35); ctx.lineTo(cx+30, cy-20); ctx.stroke();
+                ctx.beginPath(); ctx.rect(cx-28, cy+12, 56, 14); ctx.stroke();
+            } else if (type === "case") {
+                ctx.beginPath(); ctx.rect(cx-28, cy-45, 56, 90); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.rect(cx-20, cy-38, 40, 25); ctx.stroke();
+                ctx.beginPath(); ctx.arc(cx+16, cy-30, 2, 0, Math.PI*2); ctx.stroke();
+            } else if (type === "usb") {
+                ctx.beginPath(); ctx.rect(cx-18, cy-35, 36, 45); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.rect(cx-12, cy-30, 24, 12); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(cx, cy+10); ctx.lineTo(cx, cy+40); ctx.lineWidth = 5; ctx.stroke();
+            } else if (type === "hdmi") {
+                ctx.beginPath(); ctx.moveTo(cx-22, cy-35); ctx.lineTo(cx+22, cy-35); ctx.lineTo(cx+22, cy-12);
+                ctx.lineTo(cx+12, cy+2); ctx.lineTo(cx-12, cy+2); ctx.lineTo(cx-22, cy-12); ctx.closePath(); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(cx, cy+2); ctx.lineTo(cx, cy+38); ctx.lineWidth = 5; ctx.stroke();
+            } else if (type === "lan") {
+                ctx.beginPath(); ctx.rect(cx-26, cy-26, 52, 45); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.rect(cx-12, cy-36, 24, 10); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(cx, cy+19); ctx.lineTo(cx, cy+42); ctx.lineWidth = 5; ctx.stroke();
+            } else if (type === "external") {
+                ctx.beginPath(); ctx.rect(cx-35, cy-40, 70, 80); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(cx-25, cy-25); ctx.lineTo(cx+25, cy-25); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(cx-25, cy-12); ctx.lineTo(cx+25, cy-12); ctx.stroke();
+                ctx.beginPath(); ctx.rect(cx-8, cy+24, 16, 12); ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        class WordTile {
+            constructor(letter, x, y) {
+                this.letter = letter; this.x = x; this.y = y;
+                this.size = 52; this.isGrabbed = false; this.homeX = x; this.homeY = y;
+            }
+            draw() {
+                ctx.save();
+                ctx.shadowBlur = this.isGrabbed ? 20 : 6;
+                ctx.shadowColor = this.isGrabbed ? "#f59e0b" : "#00f0ff";
+                ctx.fillStyle = this.isGrabbed ? "rgba(245, 158, 11, 0.4)" : "rgba(0, 240, 255, 0.25)";
+                ctx.strokeStyle = this.isGrabbed ? "#00f0ff" : "rgba(0, 240, 255, 0.8)";
+                ctx.lineWidth = 2.5;
+                ctx.beginPath(); ctx.roundRect(this.x - this.size/2, this.y - this.size/2, this.size, this.size, 8);
+                ctx.fill(); ctx.stroke();
+                ctx.font = "bold 26px 'IBM Plex Mono', monospace"; ctx.fillStyle = "#fff";
+                ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.shadowBlur = 0;
+                ctx.fillText(this.letter, this.x, this.y);
+                ctx.restore();
+            }
+            checkHover(hx, hy) { return Math.abs(hx - this.x) < this.size/2 && Math.abs(hy - this.y) < this.size/2; }
+        }
+
+        class TargetSlot {
+            constructor(x, y) {
+                this.x = x; this.y = y; this.size = 58; this.filledWith = null;
+            }
+            draw() {
+                ctx.save();
+                ctx.strokeStyle = this.filledWith ? "#10b981" : "rgba(255, 255, 255, 0.3)";
+                ctx.lineWidth = 2; ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
+                ctx.beginPath(); ctx.roundRect(this.x - this.size/2, this.y - this.size/2, this.size, this.size, 10);
+                ctx.fill(); ctx.stroke();
+                ctx.restore();
+            }
+            checkSnap(tile) { return Math.abs(tile.x - this.x) < 48 && Math.abs(tile.y - this.y) < 48; }
+        }
+
+        function initStage(stageIdx) {
+            state.currentStageIdx = stageIdx;
+            state.stageWordsQueue = [...STAGES_DATA[stageIdx].words].sort(() => Math.random() - 0.5);
+            state.currentWordIdx = 0;
+            
+            document.getElementById('stageTitle').innerText = `STAGE ${stageIdx + 1}/${STAGES_DATA.length}`;
+            document.getElementById('categoryName').innerText = STAGES_DATA[stageIdx].name;
+            
+            initRound();
+        }
+
+        function initRound() {
+            state.roundStartTime = Date.now();
+            state.tiles = []; state.slots = []; state.hand.grabbedTile = null;
+
+            const data = state.stageWordsQueue[state.currentWordIdx];
+            state.currentRoundData = data;
+
+            const targetWord = data.word;
+            const gap = 60;
+            const totalWidthSlots = targetWord.length * gap;
+            let startSlotX = (gameCanvas.width - totalWidthSlots) / 2 + (gap / 2);
+            for(let i=0; i<targetWord.length; i++) {
+                state.slots.push(new TargetSlot(startSlotX + (i * gap), gameCanvas.height - 140));
+            }
+
+            let lettersArray = targetWord.split("").sort(() => Math.random() - 0.5);
+            const tileGap = 65;
+            let startTileX = (gameCanvas.width - (lettersArray.length * tileGap)) / 2 + (tileGap / 2);
+            for(let i=0; i<lettersArray.length; i++) {
+                state.tiles.push(new WordTile(lettersArray[i], startTileX + (i * tileGap), 150));
+            }
+            updateHUD();
+        }
+
+        function checkWordCompletion() {
+            let wordBuilt = ""; let complete = true;
+            for(let slot of state.slots) {
+                if(slot.filledWith) wordBuilt += slot.filledWith.letter;
+                else complete = false;
+            }
+
+            if (complete) {
+                if(wordBuilt === state.currentRoundData.word) {
+                    state.score += 10;
+                    state.currentWordIdx++;
+
+                    if (state.currentWordIdx >= state.stageWordsQueue.length) {
+                        let nextStage = state.currentStageIdx + 1;
+                        if (nextStage < STAGES_DATA.length) {
+                            SOUNDS.stageClear();
+                            initStage(nextStage);
+                        } else {
+                            SOUNDS.stageClear();
+                            state.scene = "VICTORY";
+                            endGame(true, "VICTORY");
+                        }
+                    } else {
+                        SOUNDS.correctWord();
+                        setTimeout(initRound, 600);
+                    }
+                } else {
+                    SOUNDS.wrong();
+                    state.tiles.forEach(t => { t.x = t.homeX; t.y = t.homeY; t.isGrabbed = false; });
+                    state.slots.forEach(s => s.filledWith = null);
+                }
+            }
+        }
+
+        function handleMissTime() {
+            SOUNDS.wrong(); state.lives--; updateHUD();
+            if(state.lives <= 0) {
+                state.scene = "GAMEOVER";
+                endGame(false, "LIVES_OUT");
+            } else { initRound(); }
+        }
+
+        function endGame(isVictory, reason) {
+            document.getElementById('hud').style.opacity = '0';
+            document.getElementById('timeBarContainer').style.opacity = '0';
+            document.getElementById('finalScore').innerText = state.score;
+            
+            const titleEl = document.getElementById('endTitle');
+            const subEl = document.getElementById('endSub');
+            
+            if(isVictory) {
+                titleEl.innerText = "🏆 VICTORY!";
+                titleEl.className = "mono-font text-4xl font-bold text-emerald-400 tracking-wide mb-2";
+                subEl.innerText = "คุณเคลียร์คำศัพท์คอมพิวเตอร์ครบทั้ง 4 ด้านเรียบร้อย!";
+            } else {
+                titleEl.innerText = "GAME OVER";
+                titleEl.className = "mono-font text-4xl font-bold text-rose-500 tracking-wide mb-2";
+                if(reason === "QUIT") {
+                    subEl.innerText = "คุณเลือกกดออกจากเกมกลางคัน";
+                } else {
+                    subEl.innerText = "หมดเวลาหรือพลังชีวิตของคุณหมดลง";
+                }
+            }
+            document.getElementById('gameOverScreen').classList.remove('hidden');
+        }
+
+        function resetToMainMenu() {
+            state.scene = "START";
+            state.tiles = [];
+            state.slots = [];
+            state.currentRoundData = null;
+            document.getElementById('gameOverScreen').classList.add('hidden');
+            document.getElementById('hud').style.opacity = '0';
+            document.getElementById('timeBarContainer').style.opacity = '0';
+            document.getElementById('startScreen').classList.remove('hidden');
+        }
+
+        function updateHUD() {
+            document.getElementById('scoreVal').innerText = String(state.score).padStart(4, '0');
+            let h = ""; for(let i=0; i<3; i++) h += i < state.lives ? "💖 " : "🖤 ";
+            document.getElementById('livesContainer').innerText = h;
+            
+            if(state.currentRoundData) {
+                let remaining = state.stageWordsQueue.length - state.currentWordIdx;
+                document.getElementById('stageProgress').innerText = `เหลืออีก ${remaining} คำจะผ่านด้านนี้`;
+            }
+        }
+
+        let lastPinchState = false;
+        function gameLoop() {
+            ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+
+            if(state.scene === "GAME" && state.currentRoundData) {
+                let elapsed = Date.now() - state.roundStartTime;
+                let pct = Math.max(0, 100 - (elapsed / state.roundLimit) * 100);
+                document.getElementById('timeBar').style.width = `${pct}%`;
+                if(elapsed >= state.roundLimit) handleMissTime();
+
+                drawVisualIcon(state.currentRoundData.icon, gameCanvas.width / 2, gameCanvas.height / 2 - 35);
+
+                ctx.save();
+                ctx.font = "600 22px 'Chakra Petch', sans-serif";
+                ctx.fillStyle = "#22d3ee"; ctx.textAlign = "center";
+                ctx.fillText(`คำใบ้: ${state.currentRoundData.hint}`, gameCanvas.width / 2, gameCanvas.height / 2 + 65);
+                ctx.restore();
+
+                state.slots.forEach(s => s.draw());
+
+                if(state.hand.isPinching) {
+                    if(!lastPinchState) { 
+                        for(let tile of state.tiles) {
+                            if(tile.checkHover(state.hand.x, state.hand.y)) {
+                                SOUNDS.grab(); state.hand.grabbedTile = tile; tile.isGrabbed = true;
+                                state.slots.forEach(s => { if(s.filledWith === tile) s.filledWith = null; });
+                                break;
+                            }
+                        }
+                    }
+                    if(state.hand.grabbedTile) {
+                        state.hand.grabbedTile.x = state.hand.x; state.hand.grabbedTile.y = state.hand.y;
+                    }
+                } else {
+                    if(lastPinchState && state.hand.grabbedTile) { 
+                        SOUNDS.drop(); let tile = state.hand.grabbedTile; tile.isGrabbed = false;
+                        let snapped = false;
+                        for(let slot of state.slots) {
+                            if(slot.checkSnap(tile) && !slot.filledWith) {
+                                tile.x = slot.x; tile.y = slot.y; slot.filledWith = tile;
+                                snapped = true; break;
+                            }
+                        }
+                        if(!snapped) { tile.x = tile.homeX; tile.y = tile.homeY; }
+                        state.hand.grabbedTile = null; checkWordCompletion();
+                    }
+                }
+                lastPinchState = state.hand.isPinching;
+
+                state.tiles.forEach(t => t.draw());
+
+                ctx.save(); ctx.translate(state.hand.x, state.hand.y);
+                let clr = state.hand.isPinching ? "#f59e0b" : "#00f0ff";
+                ctx.strokeStyle = clr; ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.arc(0, 0, state.hand.isPinching ? 9 : 16, 0, Math.PI*2); ctx.stroke();
+                ctx.fillStyle = clr; ctx.beginPath(); ctx.arc(0, 0, 4, 0, Math.PI*2); ctx.fill();
+                ctx.restore();
+            }
+            requestAnimationFrame(gameLoop);
+        }
+
+        const videoElement = document.getElementById('webcam');
+        const startBtn = document.getElementById('startBtn');
+        const quitBtn = document.getElementById('quitBtn');
+        const menuBtn = document.getElementById('menuBtn');
+
+        const hands = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
+        hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+        
+        hands.onResults((res) => {
+            if(!state.aiLoaded) {
+                state.aiLoaded = true;
+                document.getElementById('loadingText').innerText = "ระบบโครงสร้างด่านและ AI ตรวจจับมือพร้อมใช้งาน!";
+                startBtn.classList.remove('hidden'); startBtn.disabled = false;
+            }
+
+            if(res.multiHandLandmarks && res.multiHandLandmarks.length > 0) {
+                const lms = res.multiHandLandmarks[0];
+                const thumb = lms[4]; const index = lms[8];
+
+                const tx = (1 - (thumb.x + index.x)/2) * gameCanvas.width;
+                const ty = ((thumb.y + index.y)/2) * gameCanvas.height;
+
+                state.hand.x += (tx - state.hand.x) * 0.45;
+                state.hand.y += (ty - state.hand.y) * 0.45;
+
+                const dist = Math.sqrt(Math.pow(thumb.x - index.x, 2) + Math.pow(thumb.y - index.y, 2));
+                state.hand.isPinching = (dist < 0.05);
+            }
+        });
+
+        const camera = new Camera(videoElement, { onFrame: async () => { await hands.send({ image: videoElement }); }, width: 640, height: 480 });
+        camera.start().catch(() => alert("ระบบกล้องขัดข้อง"));
+
+        startBtn.addEventListener('click', () => {
+            state.score = 0; state.lives = 3; state.scene = "GAME";
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('gameOverScreen').classList.add('hidden');
+            document.getElementById('hud').style.opacity = '1';
+            document.getElementById('timeBarContainer').style.opacity = '1';
+            initStage(0);
+        });
+        
+        quitBtn.addEventListener('click', () => {
+            if(state.scene === "GAME") {
+                SOUNDS.wrong();
+                state.scene = "GAMEOVER";
+                endGame(false, "QUIT");
+            }
+        });
+
+        menuBtn.addEventListener('click', () => {
+            resetToMainMenu();
+        });
+
+        document.getElementById('restartBtn').addEventListener('click', () => { startBtn.click(); });
+
+        gameLoop();
+    </script>
+</body>
+</html>
