@@ -3,26 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>World Tile: PC Hardware </title>
+    <title>Word Tile: PC Hardware </title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
-    <link rel="icon" type="image/png" href="icon.svg"/>
+    <link rel="icon" type="image/png" href="icon.svg">
     <style>
-        /* นำเข้าฟอนต์ IBM Plex Mono และ Chakra Petch */
         @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500;700&display=swap');
         
         body {
             font-family: 'Chakra Petch', sans-serif;
             background-color: #000;
             overflow: hidden;
+            touch-action: none;
         }
         .mono-font {
             font-family: 'IBM Plex Mono', monospace;
         }
         .glass-panel {
-            background: rgba(5, 5, 15, 0.85);
-            backdrop-filter: blur(10px);
+            background: rgba(5, 5, 15, 0.5);
+            backdrop-filter: blur(16px);
             border: 1px solid rgba(6, 182, 212, 0.3);
         }
         #webcam {
@@ -31,74 +31,75 @@
         }
     </style>
 </head>
-<body class="w-screen h-screen flex flex-col items-center justify-center text-white relative select-none">
+<body class="w-screen h-screen flex flex-col items-center justify-center text-white relative select-none overflow-hidden">
 
     <video id="webcam" class="absolute inset-0 w-full h-full -z-20" autoplay playsinline></video>
     <div class="absolute inset-0 bg-slate-950/55 -z-10 pointer-events-none"></div>
 
     <canvas id="gameCanvas" class="absolute inset-0 w-full h-full z-0"></canvas>
 
-    <div id="startScreen" class="absolute inset-0 flex flex-col items-center justify-center z-10 glass-panel m-4 rounded-2xl max-w-2xl mx-auto my-auto h-[70vh]">
-        <h1 class="mono-font text-5xl font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-fuchsia-500 mb-2 text-center drop-shadow-[0_0_10px_rgba(6,182,212,0.5)]">
-            AR CYBERDROP
+    <div id="startScreen" class="absolute inset-0 flex flex-col items-center justify-center z-10 glass-panel m-4 rounded-2xl max-w-2xl mx-auto my-auto h-[85vh] sm:h-[70vh] p-4 sm:p-6 overflow-y-auto">
+        <h1 class="mono-font text-3xl sm:text-5xl font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-fuchsia-500 mb-2 text-center drop-shadow-[0_0_10px_rgba(6,182,212,0.5)]">
+            Word Tile
         </h1>
-        <p class="text-cyan-400 font-semibold tracking-widest text-sm mb-6 uppercase">ภารกิจพิชิตคำศัพท์คอมพิวเตอร์ทีละด้าน (4 Stages)</p>
+        <p class="text-cyan-400 font-semibold tracking-widest text-xs sm:text-sm mb-4 sm:mb-6 uppercase text-center">ภารกิจพิชิตคำศัพท์คอมพิวเตอร์ทีละด้าน (4 Stages)</p>
         
-        <div class="max-w-md text-left space-y-2.5 mb-8 text-gray-300 px-6 text-sm">
-            <p class="text-emerald-400 font-bold text-center text-base mb-1">🗺️ กฎการผ่านด้าน (Stage Rules):</p>
+        <div class="max-w-md text-left space-y-2 mb-6 sm:mb-8 text-gray-300 px-2 sm:px-6 text-xs sm:text-sm">
+            <p class="text-emerald-400 font-bold text-center text-sm sm:text-base mb-1">🗺️ กฎการผ่านด้าน (Stage Rules):</p>
             <p>• ต้องตอบคำศัพท์ในด้านนั้นๆ ให้ครบทุกคำ ระบบจึงจะปลดล็อกด่านถัดไป</p>
             <p>• ด่าน 1: ชิ้นส่วนหลัก (8 คำ) ➔ ด่าน 2: อุปกรณ์นำเข้า (5 คำ)</p>
             <p>• ด่าน 3: อุปกรณ์แสดงผล (4 คำ) ➔ ด่าน 4: อุปกรณ์ต่อพ่วง (5 คำ)</p>
             <p class="text-fuchsia-400 text-center font-semibold pt-1">เคลียร์ให้ครบทั้ง 4 ด้านเพื่อชนะเกมและรับใบประกาศไซเบอร์!</p>
+            <p class="text-amber-400 text-center text-[11px] sm:text-xs italic pt-1">💡 ควบคุมด้วยปลายนิ้ว: เป้าลาก (Pointer) จะคำนวณตำแหน่งให้อยู่ตรงกึ่งกลางระหว่างปลายนิ้วชี้และนิ้วโป้งพอดี เพื่อการควบคุมที่แม่นยำและเป็นธรรมชาติสูงสุดตามสรีระมือ</p>
         </div>
 
-        <div id="loadingContainer" class="flex flex-col items-center gap-4">
-            <div class="flex items-center gap-3 bg-black/60 px-6 py-2.5 rounded-full border border-cyan-500/30">
-                <span id="loadingText" class="text-cyan-300 font-medium tracking-wide text-sm animate-pulse">กำลังจัดเตรียมโครงสร้างด่านและระบบ AI...</span>
+        <div id="loadingContainer" class="flex flex-col items-center gap-4 w-full">
+            <div class="flex items-center gap-3 bg-black/60 px-4 sm:px-6 py-2 rounded-full border border-cyan-500/30 text-center max-w-xs sm:max-w-none">
+                <span id="loadingText" class="text-cyan-300 font-medium tracking-wide text-xs sm:text-sm animate-pulse">กำลังจัดเตรียมโครงสร้างด่านและระบบ AI...</span>
             </div>
-            <button id="startBtn" disabled class="mono-font bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-bold text-xl px-12 py-3.5 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-[0_0_15px_rgba(6,182,212,0.4)] hidden">
+            <button id="startBtn" disabled class="mono-font w-full sm:w-auto bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-bold text-lg sm:text-xl px-12 py-3 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-[0_0_15px_rgba(6,182,212,0.4)] hidden">
                 START_STAGE_1
             </button>
         </div>
     </div>
 
-    <div id="hud" class="absolute inset-x-0 top-0 p-6 flex justify-between items-start pointer-events-none opacity-0 transition-opacity duration-500 z-10">
-        <div class="flex flex-col gap-2 items-start">
-            <div class="glass-panel px-5 py-2 rounded-xl border-cyan-500/30">
-                <p class="text-xs tracking-wider text-cyan-400 font-bold uppercase">Score</p>
-                <p id="scoreVal" class="mono-font text-2xl font-bold">0000</p>
+    <div id="hud" class="absolute inset-x-0 top-0 p-3 sm:p-6 flex justify-between items-start pointer-events-none opacity-0 transition-opacity duration-500 z-10 gap-2">
+        <div class="flex flex-col gap-1.5 items-start min-w-[70px] sm:min-w-[100px]">
+            <div class="glass-panel px-3 sm:px-5 py-1.5 rounded-xl border-cyan-500/30 w-full">
+                <p class="text-[10px] sm:text-xs tracking-wider text-cyan-400 font-bold uppercase">Score</p>
+                <p id="scoreVal" class="mono-font text-base sm:text-2xl font-bold">0000</p>
             </div>
-            <button id="quitBtn" class="pointer-events-auto w-full px-3 py-1.5 bg-rose-950/80 hover:bg-rose-800 border border-rose-500/50 rounded-lg text-xs font-bold text-rose-300 transition-colors duration-200 shadow-md">
-                🏳️ ออกจากเกม (Quit)
+            <button id="quitBtn" class="pointer-events-auto w-full px-2 py-1 bg-rose-950/80 hover:bg-rose-800 border border-rose-500/50 rounded-lg text-[10px] sm:text-xs font-bold text-rose-300 transition-colors duration-200 shadow-md whitespace-nowrap">
+                🏳️ ออก (Quit)
             </button>
         </div>
 
-        <div class="glass-panel px-6 py-2 rounded-xl border-fuchsia-500/30 text-center min-w-[240px]">
-            <p id="stageTitle" class="mono-font text-xs font-bold text-fuchsia-400 mb-0.5">STAGE 1/4</p>
-            <p id="categoryName" class="text-sm font-bold text-white tracking-wide">กำลังโหลด...</p>
-            <p id="stageProgress" class="text-[11px] text-emerald-400 font-medium mt-0.5">เหลืออีก 0 คำจะผ่านด้าน</p>
+        <div class="glass-panel px-3 sm:px-6 py-1.5 rounded-xl border-fuchsia-500/30 text-center flex-1 max-w-[160px] sm:max-w-[280px]">
+            <p id="stageTitle" class="mono-font text-[10px] sm:text-xs font-bold text-fuchsia-400 mb-0.5">STAGE 1/4</p>
+            <p id="categoryName" class="text-xs sm:text-sm font-bold text-white tracking-wide truncate">กำลังโหลด...</p>
+            <p id="stageProgress" class="text-[9px] sm:text-[11px] text-emerald-400 font-medium mt-0.5 truncate">เหลืออีก 0 คำจะผ่านด้าน</p>
         </div>
 
-        <div class="glass-panel px-5 py-2 rounded-xl border-rose-500/30 flex flex-col items-end">
-            <p class="text-xs tracking-wider text-rose-400 font-bold mb-0.5 uppercase">Lives</p>
-            <div id="livesContainer" class="flex gap-1 text-base text-rose-500">💖 💖 💖</div>
+        <div class="glass-panel px-3 sm:px-5 py-1.5 rounded-xl border-rose-500/30 flex flex-col items-end min-w-[70px] sm:min-w-[100px]">
+            <p class="text-[10px] sm:text-xs tracking-wider text-rose-400 font-bold mb-0.5 uppercase">Lives</p>
+            <div id="livesContainer" class="flex gap-0.5 sm:gap-1 text-xs sm:text-base text-rose-500">💖 💖 💖</div>
         </div>
     </div>
 
-    <div id="timeBarContainer" class="absolute bottom-4 inset-x-12 h-1.5 bg-black/40 rounded-full border border-slate-800 opacity-0 transition-opacity duration-500 overflow-hidden">
+    <div id="timeBarContainer" class="absolute bottom-4 inset-x-4 sm:inset-x-12 h-1.5 bg-black/40 rounded-full border border-slate-800 opacity-0 transition-opacity duration-500 overflow-hidden">
         <div id="timeBar" class="h-full w-full bg-cyan-400"></div>
     </div>
 
-    <div id="gameOverScreen" class="absolute inset-0 flex flex-col items-center justify-center z-20 glass-panel m-4 rounded-2xl border-rose-500/30 max-w-md mx-auto my-auto h-[55vh] hidden">
-        <h2 id="endTitle" class="mono-font text-4xl font-bold text-rose-500 tracking-wide mb-2">GAME OVER</h2>
-        <p id="endSub" class="text-gray-400 text-sm mb-6 uppercase tracking-widest text-center px-4">พลังชีวิตของคุณหมดลง</p>
-        <p class="text-gray-300 mb-8 text-xl">คะแนนเทคโนโลยี: <span id="finalScore" class="mono-font font-bold text-cyan-400 text-2xl">0</span></p>
+    <div id="gameOverScreen" class="absolute inset-0 flex flex-col items-center justify-center z-20 glass-panel m-4 rounded-2xl border-rose-500/30 max-w-md mx-auto my-auto h-[60vh] sm:h-[55vh] p-6 hidden">
+        <h2 id="endTitle" class="mono-font text-3xl sm:text-4xl font-bold text-rose-500 tracking-wide mb-2">GAME OVER</h2>
+        <p id="endSub" class="text-gray-400 text-xs sm:text-sm mb-6 uppercase tracking-widest text-center px-4">พลังชีวิตของคุณหมดลง</p>
+        <p class="text-gray-300 mb-6 sm:mb-8 text-lg sm:text-xl">คะแนนเทคโนโลยี: <span id="finalScore" class="mono-font font-bold text-cyan-400 text-xl sm:text-2xl">0</span></p>
         
-        <div class="flex flex-col gap-3 w-full px-8">
-            <button id="restartBtn" class="mono-font w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-bold text-lg py-3 rounded-xl transition-all duration-300 transform hover:scale-[1.02] shadow-md">
+        <div class="flex flex-col gap-3 w-full sm:px-8">
+            <button id="restartBtn" class="mono-font w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-bold text-base sm:text-lg py-3 rounded-xl transition-all duration-300 transform hover:scale-[1.02] shadow-md">
                 TRY_AGAIN
             </button>
-            <button id="menuBtn" class="mono-font w-full bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 font-semibold text-base py-2.5 rounded-xl transition-colors duration-200">
+            <button id="menuBtn" class="mono-font w-full bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 font-semibold text-sm sm:text-base py-2.5 rounded-xl transition-colors duration-200">
                 BACK_TO_MAIN_MENU
             </button>
         </div>
@@ -156,9 +157,11 @@
             currentWordIdx: 0,
             stageWordsQueue: [],
             hand: { x: 0, y: 0, isPinching: false, grabbedTile: null },
+            rawLandmarks: null, 
             tiles: [], slots: [],
             currentRoundData: null, roundStartTime: 0, roundLimit: 60000,
-            aiLoaded: false
+            aiLoaded: false,
+            isMobileTouch: false 
         };
 
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -192,129 +195,203 @@
         };
 
         const gameCanvas = document.getElementById('gameCanvas'); const ctx = gameCanvas.getContext('2d');
-        function resize() { gameCanvas.width = window.innerWidth; gameCanvas.height = window.innerHeight; }
+        
+        function resize() { 
+            gameCanvas.width = window.innerWidth; 
+            gameCanvas.height = window.innerHeight; 
+            if(state.scene === "GAME" && state.currentRoundData) {
+                repositionElements();
+            }
+        }
         window.addEventListener('resize', resize); resize();
 
-        function drawVisualIcon(type, cx, cy) {
-            ctx.save(); ctx.strokeStyle = "#c084fc"; ctx.lineWidth = 3.5;
+        // ------------------ AR HAND SKELETON DRAWER ------------------
+        function drawHandSkeleton() {
+            if (state.isMobileTouch || !state.rawLandmarks) return;
+
+            const lms = state.rawLandmarks;
+            
+            const fingersConnects = [
+                [0, 1, 2, 3, 4],       // Thumb
+                [0, 5, 6, 7, 8],       // Index
+                [9, 10, 11, 12],       // Middle
+                [13, 14, 15, 16],      // Ring
+                [0, 17, 18, 19, 20]    // Pinky
+            ];
+            const palmBaseConnects = [5, 9, 13, 17];
+
+            ctx.save();
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = state.hand.isPinching ? "#f59e0b" : "#06b6d4";
+            ctx.strokeStyle = state.hand.isPinching ? "rgba(245, 158, 11, 0.65)" : "rgba(6, 182, 212, 0.55)";
+            ctx.lineWidth = 4.5;
+
+            // 1. วาดโครงเส้นเชื่อมกระดูกข้อนิ้ว (ลากติดแน่นตามพิกัดกล้องเว็บแคม 100%)
+            fingersConnects.forEach(chain => {
+                ctx.beginPath();
+                for (let i = 0; i < chain.length; i++) {
+                    const pt = lms[chain[i]];
+                    const x = (1 - pt.x) * gameCanvas.width;
+                    const y = pt.y * gameCanvas.height;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            });
+
+            // วาดอุ้งมือ
+            ctx.beginPath();
+            const startPt = lms[palmBaseConnects[0]];
+            ctx.moveTo((1 - startPt.x) * gameCanvas.width, startPt.y * gameCanvas.height);
+            for(let i=1; i<palmBaseConnects.length; i++) {
+                const pt = lms[palmBaseConnects[i]];
+                ctx.lineTo((1 - pt.x) * gameCanvas.width, pt.y * gameCanvas.height);
+            }
+            ctx.stroke();
+
+            // 2. เรนเดอร์ปมข้อต่อกระดูก (Joint Dots)
+            lms.forEach((pt, idx) => {
+                const x = (1 - pt.x) * gameCanvas.width;
+                const y = pt.y * gameCanvas.height;
+
+                ctx.beginPath();
+                if (idx === 8 || idx === 4) {
+                    ctx.fillStyle = state.hand.isPinching ? "#f59e0b" : "#22d3ee";
+                    ctx.arc(x, y, 8, 0, Math.PI * 2);
+                } else {
+                    ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+                    ctx.arc(x, y, 4.5, 0, Math.PI * 2);
+                }
+                ctx.fill();
+            });
+
+            ctx.restore();
+        }
+
+        function drawVisualIcon(type, cx, cy, scale = 1) {
+            ctx.save(); 
+            ctx.translate(cx, cy);
+            ctx.scale(scale, scale);
+            ctx.strokeStyle = "#c084fc"; ctx.lineWidth = 3.5;
             ctx.shadowBlur = 15; ctx.shadowColor = "#c084fc"; ctx.fillStyle = "rgba(192, 132, 252, 0.05)";
 
             if (type === "cpu") {
-                ctx.beginPath(); ctx.rect(cx-30, cy-30, 60, 60); ctx.fill(); ctx.stroke();
-                ctx.beginPath(); ctx.rect(cx-15, cy-15, 30, 30); ctx.stroke();
+                ctx.beginPath(); ctx.rect(-30, -30, 60, 60); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.rect(-15, -15, 30, 30); ctx.stroke();
                 for(let i = -20; i <= 20; i += 13) {
-                    ctx.beginPath(); ctx.moveTo(i+cx, cy-30); ctx.lineTo(i+cx, cy-38); ctx.stroke();
-                    ctx.beginPath(); ctx.moveTo(i+cx, cy+30); ctx.lineTo(i+cx, cy+38); ctx.stroke();
-                    ctx.beginPath(); ctx.moveTo(cx-30, i+cy); ctx.lineTo(cx-38, i+cy); ctx.stroke();
-                    ctx.beginPath(); ctx.moveTo(cx+30, i+cy); ctx.lineTo(cx+38, i+cy); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(i, -30); ctx.lineTo(i, -38); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(i, 30); ctx.lineTo(i, 38); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(-30, i); ctx.lineTo(-38, i); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(30, i); ctx.lineTo(38, i); ctx.stroke();
                 }
             } else if (type === "mainboard") {
-                ctx.beginPath(); ctx.rect(cx-45, cy-40, 90, 80); ctx.fill(); ctx.stroke();
-                ctx.beginPath(); ctx.rect(cx-35, cy-30, 25, 25); ctx.stroke();
-                ctx.beginPath(); ctx.rect(cx+10, cy-30, 8, 45); ctx.stroke();
-                ctx.beginPath(); ctx.rect(cx-35, cy+15, 45, 12); ctx.stroke();
+                ctx.beginPath(); ctx.rect(-45, -40, 90, 80); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.rect(-35, -30, 25, 25); ctx.stroke();
+                ctx.beginPath(); ctx.rect(10, -30, 8, 45); ctx.stroke();
+                ctx.beginPath(); ctx.rect(-35, 15, 45, 12); ctx.stroke();
             } else if (type === "ram") {
-                ctx.beginPath(); ctx.rect(cx-55, cy-15, 110, 30); ctx.fill(); ctx.stroke();
-                for(let i = -40; i <= 40; i += 20) ctx.beginPath(), ctx.rect(cx+i-6, cy-8, 12, 12), ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(cx-50, cy+15); ctx.lineTo(cx+50, cy+15); ctx.lineWidth = 5; ctx.stroke();
+                ctx.beginPath(); ctx.rect(-55, -15, 110, 30); ctx.fill(); ctx.stroke();
+                for(let i = -40; i <= 40; i += 20) ctx.beginPath(), ctx.rect(i-6, -8, 12, 12), ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(-50, 15); ctx.lineTo(50, 15); ctx.lineWidth = 5; ctx.stroke();
             } else if (type === "ssd") {
-                ctx.beginPath(); ctx.rect(cx-35, cy-45, 70, 90); ctx.fill(); ctx.stroke();
-                ctx.beginPath(); ctx.rect(cx-20, cy-30, 40, 35); ctx.stroke();
-                ctx.font = "bold 13px 'Chakra Petch'"; ctx.fillStyle = "#c084fc"; ctx.textAlign="center"; ctx.fillText("NVMe M.2", cx, cy+25);
+                ctx.beginPath(); ctx.rect(-35, -45, 70, 90); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.rect(-20, -30, 40, 35); ctx.stroke();
+                ctx.font = "bold 13px 'Chakra Petch'"; ctx.fillStyle = "#c084fc"; ctx.textAlign="center"; ctx.fillText("NVMe M.2", 0, 25);
             } else if (type === "hdd") {
-                ctx.beginPath(); ctx.rect(cx-35, cy-45, 70, 90); ctx.fill(); ctx.stroke();
-                ctx.beginPath(); ctx.arc(cx, cy-10, 28, 0, Math.PI*2); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(cx+5, cy+20); ctx.lineTo(cx, cy-5); ctx.stroke();
+                ctx.beginPath(); ctx.rect(-35, -45, 70, 90); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.arc(0, -10, 28, 0, Math.PI*2); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(5, 20); ctx.lineTo(0, -5); ctx.stroke();
             } else if (type === "gpu") {
-                ctx.beginPath(); ctx.rect(cx-60, cy-25, 120, 50); ctx.fill(); ctx.stroke();
-                ctx.beginPath(); ctx.arc(cx-25, cy, 17, 0, Math.PI*2); ctx.stroke();
-                ctx.beginPath(); ctx.arc(cx+25, cy, 17, 0, Math.PI*2); ctx.stroke();
+                ctx.beginPath(); ctx.rect(-60, -25, 120, 50); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.arc(-25, 0, 17, 0, Math.PI*2); ctx.stroke();
+                ctx.beginPath(); ctx.arc(25, 0, 17, 0, Math.PI*2); ctx.stroke();
             } else if (type === "psu") {
-                ctx.beginPath(); ctx.rect(cx-40, cy-40, 80, 80); ctx.fill(); ctx.stroke();
-                ctx.beginPath(); ctx.arc(cx-10, cy-10, 22, 0, Math.PI*2); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(cx+25, cy+20); ctx.lineTo(cx+45, cy+30); ctx.stroke();
+                ctx.beginPath(); ctx.rect(-40, -40, 80, 80); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.arc(-10, -10, 22, 0, Math.PI*2); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(25, 20); ctx.lineTo(45, 30); ctx.stroke();
             } else if (type === "fan") {
-                ctx.beginPath(); ctx.rect(cx-40, cy-40, 80, 80); ctx.stroke();
-                ctx.beginPath(); ctx.arc(cx, cy, 32, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.rect(-40, -40, 80, 80); ctx.stroke();
+                ctx.beginPath(); ctx.arc(0, 0, 32, 0, Math.PI*2); ctx.fill(); ctx.stroke();
                 for(let a=0; a<Math.PI*2; a+=Math.PI/2) {
-                    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx+Math.cos(a)*28, cy+Math.sin(a)*28); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(a)*28, Math.sin(a)*28); ctx.stroke();
                 }
             } else if (type === "keyboard") {
-                ctx.beginPath(); ctx.rect(cx-55, cy-20, 110, 40); ctx.fill(); ctx.stroke();
-                for(let i=-40; i<=40; i+18) { ctx.beginPath(); ctx.rect(cx+i-5, cy-10, 10, 7); ctx.stroke(); i+=18; }
+                ctx.beginPath(); ctx.rect(-55, -20, 110, 40); ctx.fill(); ctx.stroke();
+                for(let i=-40; i<=40; i+=18) { ctx.beginPath(); ctx.rect(i-5, -10, 10, 7); ctx.stroke(); }
             } else if (type === "mouse") {
-                ctx.beginPath(); ctx.roundRect(cx-20, cy-32, 40, 64, 18); ctx.fill(); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(cx, cy-32); ctx.lineTo(cx, cy); ctx.stroke();
-                ctx.beginPath(); ctx.rect(cx-3, cy-20, 6, 10); ctx.stroke();
+                ctx.beginPath(); ctx.roundRect(-20, -32, 40, 64, 18); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, -32); ctx.lineTo(0, 0); ctx.stroke();
+                ctx.beginPath(); ctx.rect(-3, -20, 6, 10); ctx.stroke();
             } else if (type === "switch") {
-                ctx.beginPath(); ctx.rect(cx-25, cy-25, 50, 50); ctx.fill(); ctx.stroke();
-                ctx.beginPath(); ctx.rect(cx-10, cy-10, 20, 20); ctx.lineWidth = 4; ctx.stroke();
+                ctx.beginPath(); ctx.rect(-25, -25, 50, 50); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.rect(-10, -10, 20, 20); ctx.lineWidth = 4; ctx.stroke();
             } else if (type === "mic") {
-                ctx.beginPath(); ctx.roundRect(cx-12, cy-30, 24, 40, 10); ctx.fill(); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(cx, cy+10); ctx.lineTo(cx, cy+30); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(cx-16, cy+30); ctx.lineTo(cx+16, cy+30); ctx.stroke();
+                ctx.beginPath(); ctx.roundRect(-12, -30, 24, 40, 10); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, 10); ctx.lineTo(0, 30); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(-16, 30); ctx.lineTo(16, 30); ctx.stroke();
             } else if (type === "webcam") {
-                ctx.beginPath(); ctx.arc(cx, cy-8, 22, 0, Math.PI*2); ctx.fill(); ctx.stroke();
-                ctx.beginPath(); ctx.arc(cx, cy-8, 8, 0, Math.PI*2); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(cx-12, cy+14); ctx.lineTo(cx-22, cy+32); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(cx+12, cy+14); ctx.lineTo(cx+22, cy+32); ctx.stroke();
+                ctx.beginPath(); ctx.arc(0, -8, 22, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.arc(0, -8, 8, 0, Math.PI*2); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(-12, 14); ctx.lineTo(-22, 32); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(12, 14); ctx.lineTo(22, 32); ctx.stroke();
             } else if (type === "monitor") {
-                ctx.beginPath(); ctx.rect(cx-60, cy-38, 120, 64); ctx.fill(); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(cx-15, cy+26); ctx.lineTo(cx-22, cy+42); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(cx+15, cy+26); ctx.lineTo(cx+22, cy+42); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(cx-30, cy+42); ctx.lineTo(cx+30, cy+42); ctx.stroke();
+                ctx.beginPath(); ctx.rect(-60, -38, 120, 64); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(-15, 26); ctx.lineTo(-22, 42); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(15, 26); ctx.lineTo(22, 42); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(-30, 42); ctx.lineTo(30, 42); ctx.stroke();
             } else if (type === "speaker") {
-                ctx.beginPath(); ctx.roundRect(cx-22, cy-42, 44, 84, 8); ctx.fill(); ctx.stroke();
-                ctx.beginPath(); ctx.arc(cx, cy-16, 12, 0, Math.PI*2); ctx.stroke();
-                ctx.beginPath(); ctx.arc(cx, cy+18, 16, 0, Math.PI*2); ctx.stroke();
+                ctx.beginPath(); ctx.roundRect(-22, -42, 44, 84, 8); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.arc(0, -16, 12, 0, Math.PI*2); ctx.stroke();
+                ctx.beginPath(); ctx.arc(0, 18, 16, 0, Math.PI*2); ctx.stroke();
             } else if (type === "headphones") {
-                ctx.beginPath(); ctx.arc(cx, cy+5, 32, Math.PI, 0); ctx.stroke();
-                ctx.beginPath(); ctx.roundRect(cx-42, cy-5, 14, 32, 6); ctx.fill(); ctx.stroke();
-                ctx.beginPath(); ctx.roundRect(cx+28, cy-5, 14, 32, 6); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.arc(0, 5, 32, Math.PI, 0); ctx.stroke();
+                ctx.beginPath(); ctx.roundRect(-42, -5, 14, 32, 6); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.roundRect(28, -5, 14, 32, 6); ctx.fill(); ctx.stroke();
             } else if (type === "printer") {
-                ctx.beginPath(); ctx.rect(cx-45, cy-20, 90, 42); ctx.fill(); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(cx-30, cy-20); ctx.lineTo(cx-30, cy-35); ctx.lineTo(cx+30, cy-35); ctx.lineTo(cx+30, cy-20); ctx.stroke();
-                ctx.beginPath(); ctx.rect(cx-28, cy+12, 56, 14); ctx.stroke();
+                ctx.beginPath(); ctx.rect(-45, -20, 90, 42); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(-30, -20); ctx.lineTo(-30, -35); ctx.lineTo(30, -35); ctx.lineTo(30, -20); ctx.stroke();
+                ctx.beginPath(); ctx.rect(-28, 12, 56, 14); ctx.stroke();
             } else if (type === "case") {
-                ctx.beginPath(); ctx.rect(cx-28, cy-45, 56, 90); ctx.fill(); ctx.stroke();
-                ctx.beginPath(); ctx.rect(cx-20, cy-38, 40, 25); ctx.stroke();
-                ctx.beginPath(); ctx.arc(cx+16, cy-30, 2, 0, Math.PI*2); ctx.stroke();
+                ctx.beginPath(); ctx.rect(-28, -45, 56, 90); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.rect(-20, -38, 40, 25); ctx.stroke();
+                ctx.beginPath(); ctx.arc(16, -30, 2, 0, Math.PI*2); ctx.stroke();
             } else if (type === "usb") {
-                ctx.beginPath(); ctx.rect(cx-18, cy-35, 36, 45); ctx.fill(); ctx.stroke();
-                ctx.beginPath(); ctx.rect(cx-12, cy-30, 24, 12); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(cx, cy+10); ctx.lineTo(cx, cy+40); ctx.lineWidth = 5; ctx.stroke();
+                ctx.beginPath(); ctx.rect(-18, -35, 36, 45); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.rect(-12, -30, 24, 12); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, 10); ctx.lineTo(0, 40); ctx.lineWidth = 5; ctx.stroke();
             } else if (type === "hdmi") {
-                ctx.beginPath(); ctx.moveTo(cx-22, cy-35); ctx.lineTo(cx+22, cy-35); ctx.lineTo(cx+22, cy-12);
-                ctx.lineTo(cx+12, cy+2); ctx.lineTo(cx-12, cy+2); ctx.lineTo(cx-22, cy-12); ctx.closePath(); ctx.fill(); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(cx, cy+2); ctx.lineTo(cx, cy+38); ctx.lineWidth = 5; ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(-22, -35); ctx.lineTo(22, -35); ctx.lineTo(22, -12);
+                ctx.lineTo(12, 2); ctx.lineTo(-12, 2); ctx.lineTo(-22, -12); ctx.closePath(); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, 2); ctx.lineTo(0, 38); ctx.lineWidth = 5; ctx.stroke();
             } else if (type === "lan") {
-                ctx.beginPath(); ctx.rect(cx-26, cy-26, 52, 45); ctx.fill(); ctx.stroke();
-                ctx.beginPath(); ctx.rect(cx-12, cy-36, 24, 10); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(cx, cy+19); ctx.lineTo(cx, cy+42); ctx.lineWidth = 5; ctx.stroke();
+                ctx.beginPath(); ctx.rect(-26, -26, 52, 45); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.rect(-12, -36, 24, 10); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, 19); ctx.lineTo(0, 42); ctx.lineWidth = 5; ctx.stroke();
             } else if (type === "external") {
-                ctx.beginPath(); ctx.rect(cx-35, cy-40, 70, 80); ctx.fill(); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(cx-25, cy-25); ctx.lineTo(cx+25, cy-25); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(cx-25, cy-12); ctx.lineTo(cx+25, cy-12); ctx.stroke();
-                ctx.beginPath(); ctx.rect(cx-8, cy+24, 16, 12); ctx.stroke();
+                ctx.beginPath(); ctx.rect(-35, -40, 70, 80); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(-25, -25); ctx.lineTo(25, -25); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(-25, -12); ctx.lineTo(25, -12); ctx.stroke();
+                ctx.beginPath(); ctx.rect(-8, 24, 16, 12); ctx.stroke();
             }
             ctx.restore();
         }
 
         class WordTile {
-            constructor(letter, x, y) {
+            constructor(letter, x, y, size = 68) { 
                 this.letter = letter; this.x = x; this.y = y;
-                this.size = 52; this.isGrabbed = false; this.homeX = x; this.homeY = y;
+                this.size = size; this.isGrabbed = false; this.homeX = x; this.homeY = y;
             }
             draw() {
                 ctx.save();
-                ctx.shadowBlur = this.isGrabbed ? 20 : 6;
+                ctx.shadowBlur = this.isGrabbed ? 22 : 8;
                 ctx.shadowColor = this.isGrabbed ? "#f59e0b" : "#00f0ff";
-                ctx.fillStyle = this.isGrabbed ? "rgba(245, 158, 11, 0.4)" : "rgba(0, 240, 255, 0.25)";
-                ctx.strokeStyle = this.isGrabbed ? "#00f0ff" : "rgba(0, 240, 255, 0.8)";
-                ctx.lineWidth = 2.5;
-                ctx.beginPath(); ctx.roundRect(this.x - this.size/2, this.y - this.size/2, this.size, this.size, 8);
+                ctx.fillStyle = this.isGrabbed ? "rgba(245, 158, 11, 0.45)" : "rgba(0, 240, 255, 0.28)";
+                ctx.strokeStyle = this.isGrabbed ? "#00f0ff" : "rgba(0, 240, 255, 0.85)";
+                ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.roundRect(this.x - this.size/2, this.y - this.size/2, this.size, this.size, 10);
                 ctx.fill(); ctx.stroke();
-                ctx.font = "bold 26px 'IBM Plex Mono', monospace"; ctx.fillStyle = "#fff";
+                ctx.font = `bold ${Math.round(this.size * 0.52)}px 'IBM Plex Mono', monospace`; 
+                ctx.fillStyle = "#fff";
                 ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.shadowBlur = 0;
                 ctx.fillText(this.letter, this.x, this.y);
                 ctx.restore();
@@ -323,18 +400,18 @@
         }
 
         class TargetSlot {
-            constructor(x, y) {
-                this.x = x; this.y = y; this.size = 58; this.filledWith = null;
+            constructor(x, y, size = 74) { 
+                this.x = x; this.y = y; this.size = size; this.filledWith = null;
             }
             draw() {
                 ctx.save();
-                ctx.strokeStyle = this.filledWith ? "#10b981" : "rgba(255, 255, 255, 0.3)";
-                ctx.lineWidth = 2; ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
-                ctx.beginPath(); ctx.roundRect(this.x - this.size/2, this.y - this.size/2, this.size, this.size, 10);
+                ctx.strokeStyle = this.filledWith ? "#10b981" : "rgba(255, 255, 255, 0.35)";
+                ctx.lineWidth = 2.5; ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+                ctx.beginPath(); ctx.roundRect(this.x - this.size/2, this.y - this.size/2, this.size, this.size, 12);
                 ctx.fill(); ctx.stroke();
                 ctx.restore();
             }
-            checkSnap(tile) { return Math.abs(tile.x - this.x) < 48 && Math.abs(tile.y - this.y) < 48; }
+            checkSnap(tile) { return Math.abs(tile.x - this.x) < this.size * 0.85 && Math.abs(tile.y - this.y) < this.size * 0.85; }
         }
 
         function initStage(stageIdx) {
@@ -354,22 +431,62 @@
 
             const data = state.stageWordsQueue[state.currentWordIdx];
             state.currentRoundData = data;
+            
+            repositionElements();
+            updateHUD();
+        }
 
-            const targetWord = data.word;
-            const gap = 60;
+        function repositionElements() {
+            if(!state.currentRoundData) return;
+            
+            const targetWord = state.currentRoundData.word;
+            const isSmallScreen = gameCanvas.width < 640;
+            
+            const gap = isSmallScreen ? Math.min(52, (gameCanvas.width - 24) / targetWord.length) : 78;
+            const slotSize = isSmallScreen ? gap - 4 : 74;
+            const tileSize = isSmallScreen ? gap - 8 : 68;
+
+            const oldFilledLetters = state.slots.map(s => s.filledWith ? s.filledWith.letter : null);
+            const oldTileState = state.tiles.map(t => ({ letter: t.letter, isHome: (t.x === t.homeX && t.y === t.homeY) }));
+
+            state.slots = [];
             const totalWidthSlots = targetWord.length * gap;
             let startSlotX = (gameCanvas.width - totalWidthSlots) / 2 + (gap / 2);
+            
+            const slotY = gameCanvas.height - (isSmallScreen ? 110 : 150);
             for(let i=0; i<targetWord.length; i++) {
-                state.slots.push(new TargetSlot(startSlotX + (i * gap), gameCanvas.height - 140));
+                state.slots.push(new TargetSlot(startSlotX + (i * gap), slotY, slotSize));
             }
 
-            let lettersArray = targetWord.split("").sort(() => Math.random() - 0.5);
-            const tileGap = 65;
-            let startTileX = (gameCanvas.width - (lettersArray.length * tileGap)) / 2 + (tileGap / 2);
-            for(let i=0; i<lettersArray.length; i++) {
-                state.tiles.push(new WordTile(lettersArray[i], startTileX + (i * tileGap), 150));
+            let lettersArray = [];
+            if(oldTileState.length > 0) {
+                lettersArray = oldTileState.map(t => t.letter);
+            } else {
+                lettersArray = targetWord.split("").sort(() => Math.random() - 0.5);
             }
-            updateHUD();
+
+            state.tiles = [];
+            const tileGap = isSmallScreen ? Math.min(54, (gameCanvas.width - 24) / lettersArray.length) : 82;
+            let startTileX = (gameCanvas.width - (lettersArray.length * tileGap)) / 2 + (tileGap / 2);
+            
+            const tileY = isSmallScreen ? 120 : 160;
+            for(let i=0; i<lettersArray.length; i++) {
+                const newTile = new WordTile(lettersArray[i], startTileX + (i * tileGap), tileY, tileSize);
+                state.tiles.push(newTile);
+            }
+
+            if(oldFilledLetters.length > 0) {
+                oldFilledLetters.forEach((letter, slotIdx) => {
+                    if(letter && slotIdx < state.slots.length) {
+                        const availableTile = state.tiles.find(t => t.letter === letter && !state.slots.some(s => s.filledWith === t));
+                        if(availableTile) {
+                            availableTile.x = state.slots[slotIdx].x;
+                            availableTile.y = state.slots[slotIdx].y;
+                            state.slots[slotIdx].filledWith = availableTile;
+                        }
+                    }
+                });
+            }
         }
 
         function checkWordCompletion() {
@@ -424,11 +541,11 @@
             
             if(isVictory) {
                 titleEl.innerText = "🏆 VICTORY!";
-                titleEl.className = "mono-font text-4xl font-bold text-emerald-400 tracking-wide mb-2";
+                titleEl.className = "mono-font text-3xl sm:text-4xl font-bold text-emerald-400 tracking-wide mb-2";
                 subEl.innerText = "คุณเคลียร์คำศัพท์คอมพิวเตอร์ครบทั้ง 4 ด้านเรียบร้อย!";
             } else {
                 titleEl.innerText = "GAME OVER";
-                titleEl.className = "mono-font text-4xl font-bold text-rose-500 tracking-wide mb-2";
+                titleEl.className = "mono-font text-3xl sm:text-4xl font-bold text-rose-500 tracking-wide mb-2";
                 if(reason === "QUIT") {
                     subEl.innerText = "คุณเลือกกดออกจากเกมกลางคัน";
                 } else {
@@ -443,6 +560,7 @@
             state.tiles = [];
             state.slots = [];
             state.currentRoundData = null;
+            state.rawLandmarks = null;
             document.getElementById('gameOverScreen').classList.add('hidden');
             document.getElementById('hud').style.opacity = '0';
             document.getElementById('timeBarContainer').style.opacity = '0';
@@ -465,17 +583,28 @@
             ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
 
             if(state.scene === "GAME" && state.currentRoundData) {
+                drawHandSkeleton();
+
                 let elapsed = Date.now() - state.roundStartTime;
                 let pct = Math.max(0, 100 - (elapsed / state.roundLimit) * 100);
                 document.getElementById('timeBar').style.width = `${pct}%`;
                 if(elapsed >= state.roundLimit) handleMissTime();
 
-                drawVisualIcon(state.currentRoundData.icon, gameCanvas.width / 2, gameCanvas.height / 2 - 35);
+                const isSmallScreen = gameCanvas.width < 640;
+                const iconScale = isSmallScreen ? 0.75 : 1;
+                const iconYOffset = isSmallScreen ? 45 : 35;
+                drawVisualIcon(state.currentRoundData.icon, gameCanvas.width / 2, gameCanvas.height / 2 - iconYOffset, iconScale);
 
                 ctx.save();
-                ctx.font = "600 22px 'Chakra Petch', sans-serif";
+                ctx.font = isSmallScreen ? "600 15px 'Chakra Petch', sans-serif" : "600 22px 'Chakra Petch', sans-serif";
                 ctx.fillStyle = "#22d3ee"; ctx.textAlign = "center";
-                ctx.fillText(`คำใบ้: ${state.currentRoundData.hint}`, gameCanvas.width / 2, gameCanvas.height / 2 + 65);
+                const rawHint = `คำใบ้: ${state.currentRoundData.hint}`;
+                if (isSmallScreen && rawHint.length > 32) {
+                    ctx.fillText(rawHint.slice(0, 28) + "...", gameCanvas.width / 2, gameCanvas.height / 2 + 50);
+                    ctx.fillText(rawHint.slice(28), gameCanvas.width / 2, gameCanvas.height / 2 + 70);
+                } else {
+                    ctx.fillText(rawHint, gameCanvas.width / 2, gameCanvas.height / 2 + 65);
+                }
                 ctx.restore();
 
                 state.slots.forEach(s => s.draw());
@@ -511,16 +640,64 @@
 
                 state.tiles.forEach(t => t.draw());
 
-                ctx.save(); ctx.translate(state.hand.x, state.hand.y);
-                let clr = state.hand.isPinching ? "#f59e0b" : "#00f0ff";
-                ctx.strokeStyle = clr; ctx.lineWidth = 3;
-                ctx.beginPath(); ctx.arc(0, 0, state.hand.isPinching ? 9 : 16, 0, Math.PI*2); ctx.stroke();
-                ctx.fillStyle = clr; ctx.beginPath(); ctx.arc(0, 0, 4, 0, Math.PI*2); ctx.fill();
-                ctx.restore();
+                // วาดเป้าเล็ง (Pointer Eye) ณ ตำแหน่งกึ่งกลางระหว่างนิ้วชี้และนิ้วโป้งตามสรีระที่แท้จริง
+                if(!state.isMobileTouch) {
+                    ctx.save(); ctx.translate(state.hand.x, state.hand.y);
+                    let clr = state.hand.isPinching ? "#f59e0b" : "#00f0ff";
+                    ctx.strokeStyle = clr; ctx.lineWidth = 3;
+                    ctx.beginPath(); ctx.arc(0, 0, state.hand.isPinching ? 9 : 16, 0, Math.PI*2); ctx.stroke();
+                    ctx.fillStyle = clr; ctx.beginPath(); ctx.arc(0, 0, 4, 0, Math.PI*2); ctx.fill();
+                    ctx.restore();
+                }
             }
             requestAnimationFrame(gameLoop);
         }
 
+        // ==================== MOBILE DIRECT TOUCH CONTROLS ====================
+        function handleScreenTouchStart(e) {
+            if(state.scene !== "GAME") return;
+            state.isMobileTouch = true;
+            const touch = e.touches[0];
+            const rect = gameCanvas.getBoundingClientRect();
+            const touchX = touch.clientX - rect.left;
+            const touchY = touch.clientY - rect.top;
+
+            state.hand.x = touchX;
+            state.hand.y = touchY;
+            state.hand.isPinching = true;
+        }
+
+        function handleScreenTouchMove(e) {
+            if(state.scene !== "GAME" || !state.hand.isPinching) return;
+            const touch = e.touches[0];
+            const rect = gameCanvas.getBoundingClientRect();
+            state.hand.x = touch.clientX - rect.left;
+            state.hand.y = touch.clientY - rect.top;
+        }
+
+        function handleScreenTouchEnd(e) {
+            if(state.scene !== "GAME") return;
+            state.hand.isPinching = false;
+        }
+
+        gameCanvas.addEventListener('touchstart', handleScreenTouchStart, { passive: true });
+        gameCanvas.addEventListener('touchmove', handleScreenTouchMove, { passive: true });
+        gameCanvas.addEventListener('touchend', handleScreenTouchEnd, { passive: true });
+
+        gameCanvas.addEventListener('mousedown', (e) => {
+            if(state.scene !== "GAME") return;
+            state.isMobileTouch = true; 
+            state.hand.x = e.clientX; state.hand.y = e.clientY;
+            state.hand.isPinching = true;
+        });
+        gameCanvas.addEventListener('mousemove', (e) => {
+            if(state.scene === "GAME" && state.hand.isPinching) {
+                state.hand.x = e.clientX; state.hand.y = e.clientY;
+            }
+        });
+        gameCanvas.addEventListener('mouseup', () => { state.hand.isPinching = false; });
+
+        // ==================== MEDIAPIPE AI HAND DETECTION ====================
         const videoElement = document.getElementById('webcam');
         const startBtn = document.getElementById('startBtn');
         const quitBtn = document.getElementById('quitBtn');
@@ -536,23 +713,44 @@
                 startBtn.classList.remove('hidden'); startBtn.disabled = false;
             }
 
+            if(state.isMobileTouch && res.multiHandLandmarks && res.multiHandLandmarks.length === 0) {
+                return;
+            }
+
             if(res.multiHandLandmarks && res.multiHandLandmarks.length > 0) {
+                state.isMobileTouch = false; 
                 const lms = res.multiHandLandmarks[0];
-                const thumb = lms[4]; const index = lms[8];
+                state.rawLandmarks = lms; 
 
-                const tx = (1 - (thumb.x + index.x)/2) * gameCanvas.width;
-                const ty = ((thumb.y + index.y)/2) * gameCanvas.height;
+                const indexFingerTip = lms[8]; // ปลายนิ้วชี้ (Index Tip)
+                const thumbTip = lms[4];        // ปลายนิ้วโป้ง (Thumb Tip)
 
-                state.hand.x += (tx - state.hand.x) * 0.45;
-                state.hand.y += (ty - state.hand.y) * 0.45;
+                // คำนวณตำแหน่งพิกัด x, y ของเป้าเล็งและจุดลากวัตถุให้อยู่กึ่งกลางระหว่างนิ้วชี้และนิ้วโป้ง (Midpoint between Index and Thumb)
+                const targetMidX = (indexFingerTip.x + thumbTip.x) / 2;
+                const targetMidY = (indexFingerTip.y + thumbTip.y) / 2;
 
-                const dist = Math.sqrt(Math.pow(thumb.x - index.x, 2) + Math.pow(thumb.y - index.y, 2));
-                state.hand.isPinching = (dist < 0.05);
+                // แปลงพิกัดสัดส่วน 0-1 ให้เข้ากับขนาด Canvas หน้าจอคอมพิวเตอร์จริง
+                const tx = (1 - targetMidX) * gameCanvas.width;
+                const ty = targetMidY * gameCanvas.height;
+
+                // อัปเดตพิกัดเป้าเล็งและโครงกล่องทันทีโดยตรง 100% ปราศจากความหน่วงใดๆ
+                state.hand.x = tx;
+                state.hand.y = ty;
+
+                const dist = Math.sqrt(Math.pow(thumbTip.x - indexFingerTip.x, 2) + Math.pow(thumbTip.y - indexFingerTip.y, 2));
+                state.hand.isPinching = (dist < 0.055); // ปรับค่า Threshold ให้รองรับสรีระการชนกันได้ง่ายเป็นธรรมชาติ
+            } else {
+                state.rawLandmarks = null;
             }
         });
 
         const camera = new Camera(videoElement, { onFrame: async () => { await hands.send({ image: videoElement }); }, width: 640, height: 480 });
-        camera.start().catch(() => alert("ระบบกล้องขัดข้อง"));
+        camera.start().catch(() => {
+            state.aiLoaded = true;
+            state.isMobileTouch = true;
+            document.getElementById('loadingText').innerText = "โหมดสัมผัสหน้าจอโดยตรงเปิดใช้งาน (No WebCam)";
+            startBtn.classList.remove('hidden'); startBtn.disabled = false;
+        });
 
         startBtn.addEventListener('click', () => {
             state.score = 0; state.lives = 3; state.scene = "GAME";
